@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=0.5, maximum-scale=0.5, minimum-scale=0.5, user-scalable=no">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="full-screen" content="yes">
+
+    <title>Super Dictionary</title>
+    <link rel="stylesheet" href="lib/bootstrap-3.3.7-dist/css/bootstrap.min.css">
+    <style>
+    </style>
+</head>
+
+<body>
+    
+<div>
+
+    <div>
+        <nav class="navbar navbar-default" role="navigation">
+            <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#" onclick="showHome()">密码盒子</a>
+            </div>
+            <div>
+                <ul class="nav navbar-nav">
+                    <li id="create_li"><a href="#" onclick="changePanel('create')">创建</a></li>
+                    <li id="mine_li"><a href="#" onclick="changePanel('mine')">我的</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a target="_blank" href="https://github.com/ChengOrangeJu/WebExtensionWallet"><span class="glyphicon"></span>星云链浏览器插件</a></li>
+                </ul>
+                
+            </div>
+            </div>
+        </nav>
+    </div>
+
+    <div>
+        <div id="home">
+            <div class="panel panel-default">
+            <div class="panel-heading">介绍</div>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <p class="text-primary">
+                        密码盒子基于星云链，帮助用户安全存储不同账号密码，永不丢失。<br>
+                        一个星云钱包地址对应一个盒子，一个盒子对应多个账号密码。<br>
+                        每个盒子需要一个盒子密码，在向盒子存储账号密码或者取出盒子内密码时需要用到盒子密码。
+                    </p>
+                </li>
+            </ul>
+        </div>
+        </div>
+        <div id="create" style="display: none;">
+        <div class="panel panel-default">
+            <div class="panel-heading">添加一个密码</div>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <label>请输入账号密码：</label><input type="text" class="form-control" name="" id="account_pwd">
+                </li>
+                <li class="list-group-item">
+                    <label>请输入密码描述：</label><input type="text" class="form-control" name="" id="account_pwd_desc">
+                </li>
+                <li class="list-group-item">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#boxPwdConfrimModal1">提交</button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="mine" style="display: none;">
+        <div class="panel panel-default">
+            <div class="panel-heading">我的密码</div>
+            <div class="panel-body">
+                <input type="text" class="form-control" name="" id="from" placeholder="请输入钱包地址">
+                <button id="search" class="btn btn-primary btn-lg btn-block" data-toggle="modal" data-target="#boxPwdConfrimModal">查询我的密码</button>
+            </div>
+            <ul class="list-group" id="result_ul">
+            </ul>
+        </div>
+    </div>
+    </div>
+
+<div class="modal fade" id="boxPwdConfrimModal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    请输入盒子密码
+                </h4>
+            </div>
+            <div class="modal-body">
+                <input type="password" name="pwd" id="box_pwd1" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button id="confirm_btn1" type="button" class="btn btn-primary">
+                    确认
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+    
+<div class="modal fade" id="boxPwdConfrimModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    请输入盒子密码
+                </h4>
+            </div>
+            <div class="modal-body">
+                <input type="password" name="pwd" id="box_pwd" class="form-control">
+            </div>
+            <div class="modal-footer">
+                <button id="confirm_btn" type="button" class="btn btn-primary">
+                    确认
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+
+</div>
+<script src=lib/jquery-3.3.1.min.js></script>
+<script src=lib/nebPay.js></script>
+<script src=lib/bootstrap-3.3.7-dist/js/bootstrap.min.js></script>
+<script src=lib/nebulas.js></script>
+<script src=lib/crypto-js.js></script>
+<script>
+
+    "use strict";
+
+    var dappAddress = "n1hTu3ZSb2QfsVq5aLaocif9XFG6b43zMH8";
+
+    var nebulas = require("nebulas"),
+        Account = nebulas.Account,
+        neb = new nebulas.Neb();
+    neb.setRequest(new nebulas.HttpRequest("https://testnet.nebulas.io"));
+
+    // 加载核心加密库
+    // var CryptoJS = require("crypto-js");
+
+
+    function showHome() {
+        $("#create").css("display","none");
+        $("#mine").css("display","none");
+        $("#create_li").removeClass();
+        $("#mine_li").removeClass();
+
+        $("#home").css("display", "block");
+    }
+
+    function changePanel(id) {
+        if (id === "create") {
+            $("#home").css("display", "none");
+            $("#create").css("display","block");
+            $("#mine").css("display","none");
+            $("#create_li").addClass("active");
+            $("#mine_li").removeClass();
+        } else {
+            $("#home").css("display", "none");
+            $("#create").css("display","none");
+            $("#mine").css("display","block");
+            $("#create_li").removeClass();
+            $("#mine_li").addClass("active");
+        }
+    }
+
+    $("#confirm_btn1").click(function() {
+        $('#boxPwdConfrimModal1').modal('hide')
+        save($("#box_pwd1").val());
+    })
+
+    $("#confirm_btn").click(function() {
+        $('#boxPwdConfrimModal').modal('hide')
+        search($("#box_pwd").val());
+    })
+
+    function encPwd(boxPwd, accountPwd) {
+        var cipherPassword = CryptoJS.AES.encrypt(accountPwd, boxPwd);
+        return cipherPassword.toString();
+    }
+
+    function decPwd(boxPwd, cipherPassword) {
+        var bytes  = CryptoJS.AES.decrypt(cipherPassword, boxPwd);
+        return bytes.toString(CryptoJS.enc.Utf8);;
+    }
+
+    function save(pwd) {
+        var to = dappAddress;
+        var value = "0";
+        var callFunction = "save"
+        var callArgs = "[\"" + encPwd(pwd, $("#account_pwd").val()) + "\",\"" + $("#account_pwd_desc").val() + "\"]"
+
+        serialNumber = nebPay.call(to, value, callFunction, callArgs, { 
+            listener: saveResult        
+        });
+
+        // intervalQuery = setInterval(function () {
+        //     funcIntervalQuery();
+        // }, 5000);
+    }
+
+    function saveResult(resp) {
+        console.log("saveResult: " + JSON.stringify(resp));
+    }
+
+    // 查找盒子中所有密码
+    function search(pwd){
+        var from = $("#from").val();
+        console.log("from: " + from);
+
+        var value = "0";
+        var nonce = "0"
+        var gas_price = "1000000"
+        var gas_limit = "2000000"
+        var callFunction = "get";
+        var callArgs = "";
+        var contract = {
+            "function": callFunction,
+            "args": callArgs
+        }
+
+        neb.api.call(from,dappAddress,value,nonce,gas_price,gas_limit,contract).then(function (resp) {
+            searchResult(pwd,resp)
+        }).catch(function (err) {
+            console.log("error:" + err.message)
+        })
+
+    }
+
+    function searchResult(boxPwd,resp) {
+        console.log("resp :" + resp);
+        var result = resp.result ;  //{"result":"{\"owner\":\"n1Sy7FDSqDTf17kjLjBjXgnWh68RFL2pZ4P\",\"passwords\":[\"{\\\"cipherPassword\\\":\\\"0\\\",\\\"description\\\":\\\"eddaa\\\"}\",\"{\\\"cipherPassword\\\":\\\"1\\\",\\\"description\\\":\\\"effafafafa\\\"}\",\"{\\\"cipherPassword\\\":\\\"2\\\",\\\"description\\\":\\\"afabbbaa\\\"}\"]}","execute_err":"","estimate_gas":"20194"}
+        console.log("result: " + JSON.stringify(result));
+
+        if (result === 'null'){
+            console.log("查询失败");
+        } else{
+            try{
+                result = JSON.parse(result)
+            }catch (err){
+                console.log("解析失败");
+            }
+
+            var passwords = result.passwords;
+            if (passwords) {
+                $("#result_ul").empty();
+                $("#result_ul").append("<li class=\"list-group-item\">"+ "查询结果：" +"</li>");
+                for (var i = 0; i < passwords.length; i++) {
+                    var s = "密码：" + decPwd(boxPwd, passwords[i].cipherPassword) + "     描述：" +
+                    passwords[i].description;
+
+                    $("#result_ul").append("<li class=\"list-group-item\">"+s+"</li>");
+                }
+            }
+        }
+
+    }
+
+    var NebPay = require("nebpay");  
+    var nebPay = new NebPay();
+    var serialNumber
+
+    var intervalQuery
+
+    function funcIntervalQuery() {
+        nebPay.queryPayInfo(serialNumber)   //search transaction result from server (result upload to server by app)
+            .then(function (resp) {
+                console.log("tx result: " + resp)   //resp is a JSON string
+                var respObject = JSON.parse(resp)
+                if(respObject.code === 0){
+                    alert(`set ${$("#search_value").val()} succeed!`)
+                    clearInterval(intervalQuery)
+                }
+            })
+            .catch(function (err) {
+                console.log(err);
+            });
+    }
+
+    function cbPush(resp) {
+        console.log("response of push: " + JSON.stringify(resp))
+    }
+
+</script>
+</body>
+
+</html>
